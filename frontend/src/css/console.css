@@ -20,9 +20,12 @@
     height: 600px;
 }
 
-.consoleContainer {
+.consoleDiv {
     width: 300px;
     height: 530px;
+    background-color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
 }
 
 .errors {
@@ -37,6 +40,8 @@
     justify-content: center;
     align-items: center;
     background-color: #1976d2;
+    border-bottom-left-radius: 11px;
+    border-bottom-right-radius: 11px;
 }
 
 .buffer {
@@ -59,3 +64,8 @@
     border-bottom-right-radius: 10px;
 }
 
+.consoleHeaderText {
+    color: white;
+    padding-top: 10px;
+    font-family: "Roboto","Helvetica","Arial", "sans-serif";
+}

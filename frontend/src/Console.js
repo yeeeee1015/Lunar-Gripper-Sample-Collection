@@ -6,9 +6,9 @@ function Console() {
     return (
         <>
             <div className="container">
-                <div className="consoleContainer">
+                <div className="consoleDiv">
                     <div className="header">
-                        <p className="consoleHeader">Console</p>
+                        <p className="consoleHeaderText">Console</p>
                     </div>
                     <div className="body">
                         <div className="buffer">
