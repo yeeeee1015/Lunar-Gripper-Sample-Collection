@@ -1,0 +1,35 @@
+* {
+    margin: 0px
+}
+
+.header {
+    background-color: white;
+    height: 30px;
+    font-size: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    height: 600px;
+    background-color: green;
+}
+
+.consoleContainer {
+    background-color: blue;
+    width: 300px;
+    height: 500px;
+}
+
+.errors {
+    background: red;
+    height: 100%;
+}
+
+.body {
+    height: 100%;
+}

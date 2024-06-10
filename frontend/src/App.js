@@ -1,35 +1,40 @@
-
-import Stack from '@mui/material/Stack'
-import Container from '@mui/material/Container'
-import ButtonGroup from '@mui/material/ButtonGroup'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Output from "./Output"
 
+
+const buttonStyles = {
+  fontSize: '40px',
+  // margin: '10px'
+}
+
+const buttonContainerStyle = {
+  display: 'flex', 
+  flexDirection: 'column', 
+  justifyContent: 'space-evenly', 
+  alignItems: 'stretch'
+}
 
 function App() {
   return (
-    <Stack spacing={2} direction="row " maxHeight={false}>
-      <Container>
-        <div style={{display: 'flex', alignItems: 'center', height: '100vh'}}>
-          <ButtonGroup orientation="vertical" >
-            <Button style={{fontSize: '40px'}}>Start</Button>
-            <Button style={{fontSize: '40px'}}>Release</Button>
-            <Button style={{fontSize: '40px'}}>Stop</Button>
-            <Button style={{fontSize: '40px'}}>Pause</Button>
-            <Button style={{fontSize: '40px'}}>Kill Switch</Button>
-            <Button style={{fontSize: '40px'}}>Reset</Button>
-          </ButtonGroup>
-        </div>
-        
-      </Container>
-      <Container>
-      <p> item two</p>
+    <div className="container1" style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly', height: '100%'}}>
+      <div className="buttonContainer" style={buttonContainerStyle}>
+            <Button variant="contained" style={buttonStyles}>Start</Button>
+            <Button variant="contained" style={buttonStyles}>Release</Button>
+            <Button variant="contained" style={buttonStyles}>Stop</Button>
+            <Button variant="contained" style={buttonStyles}>Pause</Button>
+            <Button variant="contained" style={buttonStyles}>Kill Switch</Button>
+            <Button variant="contained" style={buttonStyles}>Reset</Button>
+      </div>
+      <div className="tableContainer" style={buttonContainerStyle}>
+      <Output></Output>
 
-      </Container>
-      <Container>
+      </div>
+      <Box>
       <p> item three</p>
 
-      </Container>
-    </Stack>
+      </Box>
+    </div>
   );
 }
 
