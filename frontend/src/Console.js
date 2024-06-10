@@ -1,4 +1,5 @@
 import "./css/console.css"
+import Button from '@mui/material/Button'
 
 
 function Console() {
@@ -6,15 +7,17 @@ function Console() {
         <>
             <div className="container">
                 <div className="consoleContainer">
-                        <div className="header">
-                            <p className="consoleHeader">Console</p>
-                        </div>
-                        <div className="body">
+                    <div className="header">
+                        <p className="consoleHeader">Console</p>
+                    </div>
+                    <div className="body">
+                        <div className="buffer">
                             <p className="errors">temp values</p>
                         </div>
                     </div>
-                    <div className="clearButtonContainer">
-                        <button className="clearButton">CLEAR</button>
+                </div>
+                <div className="clearButtonContainer">
+                        <Button variant="contained" className="clearButton">CLEAR</Button>
                 </div>
             </div>
         </>
