@@ -1,5 +1,6 @@
 {
   "name": "frontend",
+  "productName": "Lunar Gripper Controls",
   "version": "0.1.0",
   "main": "public/main.js",
   "homepage": "./",
