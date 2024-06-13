@@ -46,7 +46,9 @@
 
 .buffer {
     min-height: 95%;
+    max-height: 95%;
     min-width: 90%;
+    max-width: 90%;
     background-color: white;
     margin-bottom: 5px;
     border-radius: 10px;
@@ -54,7 +56,6 @@
 
 .clearButtonContainer {
     height: 70px;
-    /* background-color: #1976d2; */
     background-color: white;
     display: flex;
     justify-content: center;

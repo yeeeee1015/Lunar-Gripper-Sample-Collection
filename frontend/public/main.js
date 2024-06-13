@@ -1,3 +1,5 @@
+//All of this code is boilerplate from the electron website
+
 const { app, BrowserWindow } = require('electron')
 
 const createWindow = () => {
@@ -5,6 +7,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
+    title: "Lunar Gripper Controls",
     webPreferences: {
       enableRemoteModule:true
     }
