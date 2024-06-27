@@ -1,0 +1,8 @@
+/* This is here because the style json objects would not apply the right font for the header */
+
+.headerText {
+    font-size: 40px;
+    color: white;
+    font-family: "Roboto","Helvetica","Arial", "sans-serif";
+
+  }
