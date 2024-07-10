@@ -1,5 +1,4 @@
-const uint8_t sensorPin = 18;
-uint8_t read;
+const uint8_t sensorPin = A0;
 
 void setup() {
   Serial.begin(115200);
@@ -7,7 +6,7 @@ void setup() {
 }
 
 void loop() {
-  uint8_t read = analogRead(sensorPin); 
+  uint16_t read = analogRead(sensorPin); 
   Serial.println(read);
   delay(50);
 }

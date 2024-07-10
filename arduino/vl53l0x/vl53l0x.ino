@@ -21,15 +21,22 @@ void setup() {
 
 
 void loop() {
+  int ct = 0;
+  unsigned int sum = 0;
+  int numAvg = 50;
   VL53L0X_RangingMeasurementData_t measure;
 
-  lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
-
-  if (measure.RangeStatus != 4) {  // phase failures have incorrect data
-    Serial.println(measure.RangeMilliMeter);
-  } else {
-    Serial.println(" out of range ");
+  while (ct <= numAvg) {
+    lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout
+    if (measure.RangeStatus != 4) {  // phase failures have incorrect data
+      Serial.println(measure.RangeMilliMeter);
+      sum = sum + measure.RangeMilliMeter;
+      ct = ct + 1;
+    }
+    else {
+      Serial.println(" out of range ");
+    }
   }
-    
-  delay(100);
+  int avg = sum / numAvg;
+  Serial.print("Average dist: "); Serial.println(avg);
 }

@@ -1,18 +1,65 @@
-const int fast = up = 1;
-const int slow = down = 0;
+#include <SoftwareSerial.h>
+#include <TFMini.h>
+
+uint8_t header = 0x59;
+TFMini tfmini;
+
+SoftwareSerial SerialTFMini(10, 11);
+
+const int fast = 1;
+const int up = 1;
+const int slow = 0;
+const int down = 0;
+
+const byte proxPin = 2;
+volatile byte proxOn = LOW;
 
 void setup()
 {
+  attachInterrupt(digitalPinToInterrupt(proxPin), blink, CHANGE);
   Serial.begin(115200);       //Initialize hardware serial port (serial debug port)
+  pinMode(proxPin, INPUT);
   while (!Serial);            // wait for serial port to connect. Needed for native USB port only
   Serial.println ("Initializing...");
+  SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
+  tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
 }
  
 void loop()
 {
-  int instr;
-  instr = getInstruction();
+  int instr = getInstruction();
   doInstruction(instr);
+}
+
+void getTFminiData(int* distance, int* strength)
+{
+  static char i = 0;
+  char j = 0;
+  int checksum = 0;
+  static double rx[9];
+  if (SerialTFMini.available())
+  {
+    rx[i] = SerialTFMini.read();
+    if (rx[0] != header) {
+      i = 0;
+    }
+    else if (i == 1 && rx[1] != header) {
+      i = 0;
+    }
+    else if (i == 8) {
+      for (j = 0; j < 8; j++) {
+        checksum += rx[j];
+      }
+      if (rx[8] == (checksum % 256)) {
+        *distance = rx[2] + rx[3] * 256;
+        *strength = rx[4] + rx[5] * 256;
+      }
+      i = 0;
+    }
+    else {
+      i++;
+    }
+  }
 }
 
 int getInstruction() {
@@ -24,6 +71,7 @@ int getInstruction() {
 void doInstruction(int instr) {
   switch (instr) {
     case 0:       // start
+      Serial.println("Case 0:");
       start();
     case 1:       // release
       release();
@@ -53,21 +101,29 @@ void start() {
   while (getLidarDist() >= 150) {     // arbitrary 
     actuateArmMotor(down, fast);
   }
-  while (getProxDist() > 100) {       // 10 cm, but in mm
+  Serial.println("Moved down");
+
+  while (!proxOn) {       // 10 cm, but in mm
     actuateArmMotor(down, slow);
   }
-  if (getProxObj() > 100) {            // arbitrary
+  Serial.println("Prox On");
+
+  if (!detectObj()) {            // arbitrary
     Serial.print("Uh oh");
-    break;
+    return;
   }
   closeClaw();
   while (getLidarDist() <= 150) {
     actuateArmMotor(up, fast);
   }
-  if (getProxObj() > 100) {
+  Serial.println("Moved up");
+
+  if (!detectObj()) {
     Serial.print("Uh oh");
-    break;
+    return;
   }
+
+  Serial.println("Done");
 }
 
 void release() {
@@ -75,45 +131,58 @@ void release() {
 }
 
 void reset() {
-  stopMotion();
-  openClaw();
-  while (!isTopLimit()) {
-    raiseClaw();
-  }
+  return;
 }
 
 void closeClaw() {
   // motor stuff
+  return;
 }
 
 void openClaw() {
   // motor stuff
+  return;
 }
 
 void lowerClaw() {
   // actuate arm motor method by arbitrary amount
+  return;
 }
 
 void raiseClaw() {
   // actuate arm motor method by arbitrary amount
+  return;
 }
 
 void stopMotion() {
   // motor stuff
+  return;
 }
 
 bool isTopLimit() {
   // yada yada 
+  return;
 }
 
 void actuateArmMotor(int dir, int speed) {
   // yada yada
+  return;
 }
 
 int getLidarDist() {
-  // yada yada
+  int distance = 0;
+  int strength = 0;
+  while (!distance) {
+    getTFminiData(&distance, &strength);
+  }
+  Serial.println(distance);
+  return distance;
 }
 
-int getProxDist() {
-  // yada yada
+bool detectObj() {
+  return true;
+}
+
+void blink() {
+  proxOn = !proxOn;
 }

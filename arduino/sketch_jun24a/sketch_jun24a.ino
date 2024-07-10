@@ -4,7 +4,7 @@
 uint8_t header = 0x59;
 TFMini tfmini;
  
-SoftwareSerial SerialTFMini(0, 1);
+SoftwareSerial SerialTFMini(10, 11);
  
 void getTFminiData(int* distance, int* strength)
 {
@@ -49,17 +49,18 @@ void setup()
  
 void loop()
 {
+  while (getLidarDist() >= 20) {
+    
+  }
+  Serial.println("Done");
+}
+
+int getLidarDist() {
   int distance = 0;
   int strength = 0;
- 
-  getTFminiData(&distance, &strength);
-  while (!distance)
-  {
+  while (!distance) {
     getTFminiData(&distance, &strength);
-    if (distance)
-    {
-      Serial.println(distance);
-    }
   }
-  delay(100);
+  Serial.println(distance);
+  return distance;
 }

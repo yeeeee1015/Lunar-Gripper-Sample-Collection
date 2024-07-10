@@ -10,8 +10,6 @@ const uint8_t proxPin = 11;
 const uint8_t pressurePin = 14;
 ezButton limitSwitch(21);
 
-int cyclect = 0;
-
 SoftwareSerial SerialTFMini(0, 1);
  
 void getTFminiData(int* distance, int* strength)
@@ -68,62 +66,30 @@ void setup()
   // }
 }
 
-int displayTFminiData(int distance, int strength) {
-  getTFminiData(&distance, &strength);
-  if (distance) {
-    Serial.print("TFmini: "); Serial.println(distance);
-    if (distance < 10 && cyclect > 100) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
 void loop()
 {
   int distance = 0;
   int strength = 0;
-  int contTF = 1;
-  int contVL = 1;
   cyclect = 0;
 
   VL53L0X_RangingMeasurementData_t measure;
   
   while (!distance) {
-    while (contTF) {
-      cyclect = cyclect + 1;
-      if (displayTFminiData(distance, strength)) {
-        contTF = 0;
-        distance = 1;
-      }
-    }
+    getTFminiData(&distance, &strength);
   }
+  Serial.print("TFMini: "); Serial.println(distance);
 
-  // while (contVL) {
-  //   lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
-  //   if (measure.RangeStatus == 4) {
-  //     Serial.println("out of range");
-  //   }
-  //   Serial.print("VL53L0X: "); Serial.println(measure.RangeMilliMeter);
-  //   if (measure.RangeMilliMeter < 100) {
-  //     contVL = 0;
-  //   }
+  // lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+  // if (measure.RangeStatus == 4) {
+  //   Serial.println("out of range");
   // }
+  // Serial.print("VL53L0X: "); Serial.println(measure.RangeMilliMeter);
 
+  Serial.print("Prox: "); Serial.println(digitalRead(proxPin));
 
-  while (digitalRead(proxPin) == 1) {
-    Serial.print("Prox: "); Serial.println(digitalRead(proxPin));
-    delay(100);
-  }
-
-  while (analogRead(pressurePin) < 300) {
-    Serial.print("Pressure: "); Serial.println(analogRead(pressurePin));
-    delay(100);
-  }
+  Serial.print("Pressure: "); Serial.println(analogRead(pressurePin));
 
   // limitSwitch.loop();
-  // while (limitSwitch.getState() == HIGH) {
-  //   Serial.print("Limit Switch "); Serial.println(limitSwitch.getState());
-  //   delay(100);
+  // Serial.print("Limit Switch "); Serial.println(limitSwitch.getState());
   // }
 }

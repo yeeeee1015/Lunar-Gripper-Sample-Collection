@@ -1,12 +1,23 @@
-const uint8_t sensorPin = 18;
 uint8_t read;
+
+const byte proxPin = 2;
+volatile byte proxOn = LOW;
+
 
 void setup() {
   Serial.begin(115200);
-  pinMode(sensorPin, INPUT);
+  pinMode(proxPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(proxPin), blink, CHANGE);
 }
 
 void loop() {
-  uint8_t read = digitalRead(sensorPin); 
-  Serial.println(read);
+  while (true) {
+    Serial.println("go");
+    delay(1000);
+  }
+}
+
+void blink() {
+  Serial.println("detected");
+  proxOn = !proxOn;
 }
