@@ -2,9 +2,9 @@
 #define encoderB 3
 
 const int PPR = 24;
-const int gearRatio = 1;
+const int gearRatio = 20;
 const int readNum = 4;
-volatile long int currentPos = 0; // increase is CW, decrease is CCW
+volatile double currentPos = 0; // increase is CW, decrease is CCW
 
 void setup() {
   Serial.begin(115200);
@@ -17,7 +17,7 @@ void setup() {
 void loop() {
   Serial.print("currentPos: "); Serial.println(currentPos/readNum);
   Serial.print("rotational angle: "); Serial.println((360*currentPos)/(PPR*readNum*gearRatio));
-  delay(500);
+  delay(100);
 }
 
 void changeA() {

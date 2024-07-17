@@ -19,7 +19,48 @@ const int PPR = 24;
 const int gearRatio = 1;
 const int readNum = 4;
 volatile long int currentPosArm = 0; // increase is CW, decrease is CCW
-volatile long int currentPosClaw = 0; 
+volatile long int currentPosClaw = 0;
+double clawDist = 0;
+
+void blink() {
+  proxOn = !proxOn;
+}
+
+void changeArmA() {
+  if (digitalRead(encoderArmA) != digitalRead(encoderArmB)) {
+    currentPosArm++;
+  }
+  else {
+    currentPosArm--;
+  }
+}
+
+void changeArmB() {
+  if (digitalRead(encoderArmA) == digitalRead(encoderArmB)) {
+    currentPosArm++;
+  }
+  else {
+    currentPosArm--;
+  }
+}
+
+void changeClawA() {
+  if (digitalRead(encoderClawA) != digitalRead(encoderClawB)) {
+    currentPosClaw++;
+  }
+  else {
+    currentPosClaw--;
+  }
+}
+
+void changeClawB() {
+  if (digitalRead(encoderClawA) == digitalRead(encoderClawB)) {
+    currentPosClaw++;
+  }
+  else {
+    currentPosClaw--;
+  }
+}
 
 void setup()
 {
@@ -37,13 +78,13 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(encoderClawB), changeClawB, CHANGE);
   while (!Serial);            // wait for serial port to connect. Needed for native USB port only
   
-  Serial.println ("Initializing...");
-  SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
-  tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
-  if (!lox.begin()) {
-    Serial.println(F("Failed to boot VL53L0X"));
-    while(1);
-  }
+  // Serial.println ("Initializing...");
+  // SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
+  // tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
+  // if (!lox.begin()) {
+  //   Serial.println(F("Failed to boot VL53L0X"));
+  //   while(1);
+  // }
 }
  
 void loop()
@@ -90,10 +131,10 @@ void getTFminiData(int* distance, int* strength)
 int getInstruction() {
   delay(1000);
   Serial.println("Type please");
-  while (!Serial.available()) {
-
+  while (Serial.available() <= 1) {
   }
-  int thing = Serial.println(Serial.parseInt());
+  Serial.print("Number of bytes available: "); Serial.println(Serial.available());
+  int thing = (Serial.parseInt());
   Serial.print("thing: "); Serial.println(thing);
   return thing;
 }
@@ -103,23 +144,32 @@ void doInstruction(int instr) {
   switch (instr) {
     case 0:       // start
       start();
+      break;
     case 1:       // release
       release();
+      break;
     case 2:       // kill switch
       killswitch();
+      break;
     case 3:       // reset
       reset();
+      break;
     case 4:       // close claw
       closeClaw();
+      break;
     case 5:       // open claw
       openClaw();
+      break;
     case 6:       // lower claw
       lowerClaw();
+      break;
     case 7:       // raise claw
       raiseClaw();
+      break;
     default:
       Serial.println("bruh");
   }
+  Serial.println("executed instruction");
 }
 
 void killswitch() {
@@ -128,35 +178,31 @@ void killswitch() {
 
 void start() {
   int groundDist;
-
   reset();
   groundDist = getTFMiniDist();
-
   while (currentPosArm <= groundDist * 0.90) {     // arbitrary 
     actuateArmMotor();
   }
   Serial.println("Moved down");
-
   while (!proxOn) {       // 15 cm
     actuateArmMotor();
   }
   Serial.println("Prox On");
-
-  if (!detectObj()) {            // arbitrary
-    Serial.print("Uh oh");
+  if (!detectObj()) {
+    Serial.print("Object not detected");
     return;
   }
   closeClaw();
-  while (getTFMiniDist() <= 150) {
+  int bottom = currentPosArm;
+  while (currentPosArm >= bottom - 15) { // arbitrary 15
     actuateArmMotor();
   }
   Serial.println("Moved up");
 
   if (!detectObj()) {
-    Serial.print("Uh oh");
+    Serial.print("Object not detected");
     return;
   }
-
   Serial.println("Done");
 }
 
@@ -165,6 +211,12 @@ void release() {
 }
 
 void reset() {
+  while (!isTopLimit()) {
+    actuateArmMotor(); // move claw up
+  }
+  closeClaw();
+  clawDist = getAvgVl53L0X(15);
+  openClaw();
   return;
 }
 
@@ -241,45 +293,9 @@ int getAvgVl53L0X(int numAvg) {
 }
 
 bool detectObj() {
+  if (abs(clawDist - getAvgVl53L0X(15)) >= 5) { // arbitrary 5
+    return true;
+  //return false;
   return true;
 }
-
-void blink() {
-  proxOn = !proxOn;
-}
-
-void changeArmA() {
-  if (digitalRead(encoderArmA) != digitalRead(encoderArmB)) {
-    currentPos1++;
-  }
-  else {
-    currentPos1--;
-  }
-}
-
-void changeArmB() {
-  if (digitalRead(encoderArmA) == digitalRead(encoderArmB)) {
-    currentPos1++;
-  }
-  else {
-    currentPos1--;
-  }
-}
-
-void changeClawA() {
-  if (digitalRead(encoderClawA) != digitalRead(encoderClawB)) {
-    currentPos2++;
-  }
-  else {
-    currentPos2--;
-  }
-}
-
-void changeClawB() {
-  if (digitalRead(encoderClawA) == digitalRead(encoderClawB)) {
-    currentPos2++;
-  }
-  else {
-    currentPos2--;
-  }
 }

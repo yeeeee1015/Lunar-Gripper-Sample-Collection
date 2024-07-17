@@ -14,18 +14,36 @@ const io = new Server(server, {
   }
 });
 const portNumber = 3001
+let currStatus = ""
 
 const port = new SerialPort({
-  path: "/dev/ttyACM0",
+  //path: "/dev/ttyACM0",
+  path: "COM3",
+  autoOpen: false,
   baudRate: 115200
 })
+
+port.open(() => {
+  console.log("port is opened")
+  
+})
+
+port.write("open", ()=> {
+  console.log("writing to port")
+  port.close(()=>{
+    console.log("port is closed");
+  })
+})
+
+
 
 io.on('connection', (socket) => {
   console.log('a user connected');
 
-  socket.on('sendingStatus', (currStatus) => {
-    console.log(currStatus)
-    port.write(currStatus)
+  socket.on('sendingStatus', (_currStatus) => {
+    console.log(_currStatus)
+    currStatus = _currStatus
+    
   })
 
 });
@@ -62,10 +80,14 @@ function jsonify() {
   }
 }
 
-port.on('data', (data) => {
+// port.on('data', (data) => {
 
-    deserialize(data)
+//     deserialize(data)
 
-    io.emit('sendingData', jsonify())
+//     io.emit('sendingData', jsonify())
 
-})
+// })
+
+// port.on('error', (err)=> {
+//   console.log("error:", err)
+// })
