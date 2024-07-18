@@ -134,8 +134,9 @@ bool detectObj() {
 int getInstruction() {
   delay(1000);
   Serial.println("Type please");
-  while (Serial.available() == 0) {
+  while (Serial.available() <= 2) {
   }
+  Serial.print("Number of bytes available: "); Serial.println(Serial.available());
   int thing = (Serial.parseInt());
   Serial.print("thing: "); Serial.println(thing);
   return thing;

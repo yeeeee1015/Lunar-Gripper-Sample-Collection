@@ -8,9 +8,9 @@ void setup() {
 void loop() {
   digitalWrite(LED_BUILTIN, LOW);
   if (Serial.available() > 0) {
-    Serial.println(Serial.readString());
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(5000);    
+    if (Serial.readString() == "on") {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(5000);
+    } 
   }
- 
 }

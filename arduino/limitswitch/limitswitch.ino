@@ -1,13 +1,17 @@
-#include <ezButton.h>
+#define limitOne 21
 
-ezButton limitSwitch(21);
+volatile byte limitState = LOW;
+
+void blink() {
+  limitState = !limitState;
+}
 
 void setup() {
   Serial.begin(115200);
-  limitSwitch.setDebounceTime(100);
+  pinMode(limitOne, INPUT);
+  attachInterrupt(digitalPinToInterrupt(limitOne), blink, CHANGE); // init interrupt for prox
 }
 
 void loop() {
-  limitSwitch.loop();
-  Serial.println(limitSwitch.getState());
+  Serial.println(limitState);
 }

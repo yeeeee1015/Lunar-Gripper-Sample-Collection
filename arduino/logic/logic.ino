@@ -1,16 +1,18 @@
 #include <SoftwareSerial.h>
 #include <TFMini.h>
 #include "Adafruit_VL53L0X.h"
+#include <ezButton.h>
 #define proxPin 4
 #define encoderArmA 2
 #define encoderArmB 3
 #define encoderClawA 18 
 #define encoderClawB 19
 
+
 uint8_t header = 0x59;
 TFMini tfmini;
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
-
+ezButton limitSwitch(21);
 SoftwareSerial SerialTFMini(10, 11);
 
 volatile byte proxOn = LOW;
@@ -76,15 +78,16 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(encoderArmB), changeArmB, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoderClawA), changeClawA, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoderClawB), changeClawB, CHANGE);
+  limitSwitch.setDebounceTime(100);
   while (!Serial);            // wait for serial port to connect. Needed for native USB port only
   
-  // Serial.println ("Initializing...");
-  // SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
-  // tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
-  // if (!lox.begin()) {
-  //   Serial.println(F("Failed to boot VL53L0X"));
-  //   while(1);
-  // }
+  Serial.println ("Initializing...");
+  SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
+  tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
+  if (!lox.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while(1);
+  }
 }
  
 void loop()
@@ -179,6 +182,7 @@ void killswitch() {
 void start() {
   int groundDist;
   reset();
+  Serial.println("Reset");
   groundDist = getTFMiniDist();
   while (currentPosArm <= groundDist * 0.90) {     // arbitrary 
     actuateArmMotor();
@@ -246,8 +250,8 @@ void stopMotion() {
 }
 
 bool isTopLimit() {
-  // yada yada 
-  return;
+  limitSwitch.loop();
+  return !limitSwitch.getState();
 }
 
 void actuateArmMotor() {

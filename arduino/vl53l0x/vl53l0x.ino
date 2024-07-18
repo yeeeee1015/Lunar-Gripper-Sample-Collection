@@ -38,5 +38,5 @@ void loop() {
     }
   }
   int avg = sum / numAvg;
-  Serial.print("Average dist: "); Serial.println(avg);
+  //Serial.print("Average dist: "); Serial.println(avg);
 }

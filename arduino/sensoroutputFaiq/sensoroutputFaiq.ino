@@ -63,11 +63,14 @@ void setup()
   pinMode(proxPin, INPUT);
   pinMode(pressurePin, INPUT);
   limitSwitch.setDebounceTime(50);
+  pinMode(LED_BUILTIN, OUTPUT);
+
  
   // wait for serial port to connect
-  while (!Serial) {
-    delay(1);
-  }
+  // while (!Serial) {
+  //   delay(1);
+  // }
+  delay(2000);
  
   Serial.println ("Initializing...");
   SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
@@ -86,17 +89,17 @@ void loop()
  
   VL53L0X_RangingMeasurementData_t measure;
  
-  getTFminiData(&distance, &strength);
-  distance = 0;
-  while (!distance) {
-    getTFminiData(&distance, &strength);
-  }
+  // getTFminiData(&distance, &strength);
+  // distance = 0;
+  // while (!distance) {
+  //   getTFminiData(&distance, &strength);
+  // }
   // Serial.print("TFMini: "); Serial.println(distance);
  
-  lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
-  if (measure.RangeStatus == 4) {
-    Serial.println("out of range");
-  }
+  // lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+  // if (measure.RangeStatus == 4) {
+  //   Serial.println("out of range");
+  // }
   // Serial.print("VL53L0X: "); Serial.println(measure.RangeMilliMeter);
  
   // Serial.print("Prox: "); Serial.println(digitalRead(proxPin));
@@ -107,12 +110,11 @@ void loop()
   // Serial.print("Limit Switch "); Serial.println(limitSwitch.getState());
  
   // Serial.println(serialize(TFMiniDist , measure.RangeMilliMeter));
-  // while (Serial.available() > 0) {
-  //   Serial.println(Serial.read());
-  // }
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(50);
   if (Serial.available() > 0) {
-    String temp = Serial.readString();
-    Serial.println(temp);
+    Serial.println(random(0,10));
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(50);
   }
   // delay(500);

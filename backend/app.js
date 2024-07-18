@@ -18,7 +18,7 @@ let currStatus = ""
 
 const port = new SerialPort({
   //path: "/dev/ttyACM0",
-  path: "COM3",
+  path: "COM4",
   autoOpen: false,
   baudRate: 115200
 })
@@ -30,9 +30,9 @@ port.open(() => {
 
 port.write("open", ()=> {
   console.log("writing to port")
-  port.close(()=>{
-    console.log("port is closed");
-  })
+  // port.close(()=>{
+  //   console.log("port is closed");
+  // })
 })
 
 
@@ -80,14 +80,16 @@ function jsonify() {
   }
 }
 
-// port.on('data', (data) => {
+port.on('data', (data) => {
 
-//     deserialize(data)
+  port.write("some data")
 
-//     io.emit('sendingData', jsonify())
+    deserialize(data)
 
-// })
+    io.emit('sendingData', jsonify())
 
-// port.on('error', (err)=> {
-//   console.log("error:", err)
-// })
+})
+
+port.on('error', (err)=> {
+  console.log("error:", err)
+})
