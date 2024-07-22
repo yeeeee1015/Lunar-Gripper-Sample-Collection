@@ -29,6 +29,7 @@ port.open(() => {
 
 io.on('connection', (socket) => {
   console.log('a user connected');
+  queue = [];  
 
   socket.on('sendingStatus', (_currStatus) => {
     console.log(currStatus)
