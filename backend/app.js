@@ -91,9 +91,9 @@ port.on('data', (data) => {
 
     console.log(data.toString().slice(0,data.toString().length - 2))
 
-    // deserializeArduino(data)
+    deserializeArduino(data)
 
-    // io.emit('sendingData', jsonify())
+    io.emit('sendingData', jsonify())
 
     port.write(serializeGUI())
 
