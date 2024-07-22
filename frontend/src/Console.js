@@ -5,36 +5,44 @@ import { useState } from "react"
 //custom console component, current has hardcoded values
 
 
+
 function Console() {
-
-    const [error, setError] = useState("")
+    const [status, setStatus] = useState([])
     function handleClick() {
+        console.log('added')
+        setStatus(t => [...t , "new error"])
+        console.log(status)
+    }
 
-        if (error === "") {
-            setError("there is an error")
-        } else {
-            setError("")
-        } 
+    function clearConsole() {
+        console.log('cleared')
+        setStatus(t => [])
     }
 
     return (
         <>
             <button onClick={handleClick}> temp </button>
             <div className="container">
-                <div className="consoleDiv">
-                    <div className="header">
-                        <p className="consoleHeaderText">Console</p>
-                    </div>
-                    <div className="body">
-                        <div className="buffer">
-                            <p className="errors">{error}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="clearButtonContainer">
-                        <Button variant="contained" className="clearButton">CLEAR</Button>
-                </div>
-            </div>
+              <div className="consoleDiv">
+                  <div className="header">
+                      <p className="consoleHeaderText">Console</p>
+                  </div>
+                  <div className="body">
+                      <div className="buffer">
+                          <ol>
+                            {status.map((stat, index) => (
+                                <li key={index}>
+                                    <span className="statusText">{stat}</span>
+                                </li>
+                            ))}
+                          </ol>
+                      </div>
+                  </div>
+              </div>
+              <div className="clearButtonContainer">
+                      <Button variant="contained" className="clearButton" onClick={clearConsole}>CLEAR</Button>
+              </div>
+          </div>
         </>
     )
 }

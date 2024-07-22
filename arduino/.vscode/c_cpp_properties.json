@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Users/eye/.platformio/packages/framework-arduinoteensy/libraries/SoftwareSerial",
+                "C:/Users/eye/.platformio/packages/framework-arduinoteensy/cores/teensy4",
+                "C:/Users/eye/Documents/Arduino/libraries/TFMini/src",
+                "C:/Users/eye/Documents/Arduino/libraries/Adafruit_VL53L0X/src",
+                "C:/Users/eye/Documents/Arduino/libraries/ezButton/src",
+                "C:/Users/eye/.platformio/packages/framework-arduinoteensy/libraries/Wire"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ]
+        }
+    ],
+    "version": 4
+}
