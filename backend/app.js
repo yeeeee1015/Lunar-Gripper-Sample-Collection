@@ -2,7 +2,6 @@ const { SerialPort } = require("serialport")
 
 const express = require('express');
 const { createServer } = require('node:http');
-const { join } = require('node:path');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -15,35 +14,32 @@ const io = new Server(server, {
 });
 const portNumber = 3001
 let currStatus = ""
+let queue = []
 
 const port = new SerialPort({
-  //path: "/dev/ttyACM0",
   path: "COM4",
-  autoOpen: false,
-  baudRate: 115200
+  baudRate: 115200,
+  autoOpen: false
 })
 
 port.open(() => {
   console.log("port is opened")
-  
+  port.write('open')
 })
-
-port.write("open", ()=> {
-  console.log("writing to port")
-  // port.close(()=>{
-  //   console.log("port is closed");
-  // })
-})
-
-
 
 io.on('connection', (socket) => {
   console.log('a user connected');
 
   socket.on('sendingStatus', (_currStatus) => {
-    console.log(_currStatus)
+    console.log(currStatus)
     currStatus = _currStatus
-    
+  })
+
+  socket.on('uiData', (info) => {
+
+    queue.push(info)
+    console.log(queue)
+  
   })
 
 });
@@ -60,7 +56,7 @@ let Pressure = null // index 2
 let VL53L0X = null // index 3
 let limit = null // index 4
 
-function deserialize(data) {
+function deserializeArduino(data) {
     let array = data.toString().slice(0,data.toString().length - 2).split("@") // converts to string, removes garbage characters, splits by @ into array
     TFMini = array[0]
     Prox = array[1]
@@ -68,6 +64,15 @@ function deserialize(data) {
     VL53L0X = array[3]
     limit = array[4]
     // console.log(TFMini, Prox,Pressure,VL53L0X,limit)
+}
+
+function serializeGUI() {
+  let currInstruction = queue.shift()
+  if (!currInstruction) {
+    return "empty"
+  }
+  console.log(currInstruction)
+  return String(currInstruction.sensorNumber) + "@" + String(currInstruction.sensorData);
 }
 
 function jsonify() {
@@ -80,16 +85,20 @@ function jsonify() {
   }
 }
 
+
+
 port.on('data', (data) => {
 
-  port.write("some data")
+    console.log(data.toString().slice(0,data.toString().length - 2))
 
-    deserialize(data)
+    // deserializeArduino(data)
 
-    io.emit('sendingData', jsonify())
+    // io.emit('sendingData', jsonify())
+
+    port.write(serializeGUI())
 
 })
 
-port.on('error', (err)=> {
-  console.log("error:", err)
+port.on('error', (err) => {
+  console.log('Error: ' + err)
 })

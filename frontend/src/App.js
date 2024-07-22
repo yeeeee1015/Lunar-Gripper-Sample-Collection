@@ -13,26 +13,41 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import Slider from '@mui/material/Slider';
+import Box from '@mui/material/Box';
+import { Typography } from '@mui/material'
 
 const io = require("socket.io-client")
 const socket = io("http://localhost:3001")
 
-let buttonSize = '20px'
-let startColor = '#00b061'
-let releaseColor = '#f7a305'
-let killSwitchColor = '#d62206'
+const buttonSize = '20px'
+const startColor = '#00b061'
+const releaseColor = '#f7a305'
+const killSwitchColor = '#d62206'
+const pauseColor = '#A9A9A9'
+const resetColor = '#7F00FF'
+let inputData = {
+  sensorNumber : -1,
+  sensorData: null
+}
 
 let boolPause = false
-let armUpDist = 0
-let armDownDist = 0
+let armDist = 0
+let gripperPercent = 0
 
 socket.on("connection", () => {
   console.log("this is the client, just connected")
 })
 
 
-const buttonStyles = {
+const pauseButtonStyles = {
   fontSize: buttonSize,
+  backgroundColor: pauseColor
+}
+
+const resetButtonStyles = {
+  fontSize: buttonSize,
+  backgroundColor: resetColor
 }
 
 const buttonStartStyles = {
@@ -44,8 +59,9 @@ const buttonReleaseStyles = {
   backgroundColor: releaseColor
 }
 const buttonKillSwitchStyles = {
-  fontSize: buttonSize,
-  backgroundColor: killSwitchColor
+  fontSize: '40px',
+  backgroundColor: killSwitchColor,
+  width: '100%'
 }
 const container1Styles = {
   display: 'flex', 
@@ -59,11 +75,7 @@ const buttonContainerStyle = {
   justifyContent: 'space-evenly', 
   alignItems: 'stretch'
 }
-const tableContainerStyle = {
-  display: "flex",
-  justifyContent: 'center',
-  alignItems: 'center',
-}
+
 const consoleContainerStyle = {
   height: '100%',
   display: 'flex',
@@ -88,51 +100,70 @@ const imageStyle = {
 function App() {
 
   const [status, setStatus] = useState([])
-    function handleClick(err) {
+    function handleClick(initStatus, sensNum, sensData) {
       if (status.length >= 25) {
-        setStatus(t => [err])
+        setStatus(t => [initStatus])
       } else {
-        setStatus(t => [...t , err])
+        setStatus(t => [...t , initStatus])
       }
-      socket.emit("sendingStatus", err)
-      
+      inputData.sensorNumber = sensNum
+      inputData.sensorData = sensData
+      socket.emit("uiData", inputData)
+      inputData = {
+        sensorNumber : -1,
+        sensorData: null
+      }
+
     }
 
     function startButton() {
-      handleClick("starting")
+      handleClick("Starting Collection", 1, null)
     }
     function releaseButton() {
-      handleClick("releasing")
+      handleClick("Releasing", 2, null)
     }
     function killSwitchButton() {
-      handleClick("killing power")
+      handleClick("Killing power", 3, null)
     }
     function pauseButton() {
       if (boolPause) {
-        handleClick("unpaused")
+        setButtonText("Pause")
+        handleClick("Unpaused",4,null)
       } else {
-        handleClick("paused")
+        setButtonText("Unpause")
+        handleClick("Paused",4,null)
       }
       boolPause = !boolPause
     }
     function resetButton() {
-      handleClick("resetting")
+      handleClick("Resetting",5,null)
     }
-    function openClawButton() {
-      handleClick("changing claw position")
+    
+    const armSliderChange = (event, newValue) => {
+      setArmSliderValue(newValue)
+      armDist = newValue
     }
-    function armUpButton() {
-      handleClick("moving arm up " + armUpDist + "cm")
+
+    const gripperSliderChange = (event, newValue) => {
+      setGripperSliderValue(newValue)
+      gripperPercent = newValue
+      
     }
-    function armDownButton() {
-      handleClick("moving arm down " + armDownDist + "cm")
+
+    function armSliderGoButton() {
+      handleClick("Arm is moving to " + armDist +" cm",6,armDist)
+    }
+
+    function gripperSliderGoButton() {
+      handleClick("Gripper is open to " + gripperPercent +"°",7,gripperPercent)
     }
 
     function clearConsole() {
-        console.log('cleared')
         setStatus(t => [])
     }
-
+  const [buttonText, setButtonText] = useState("Pause")
+  const [armSliderValue, setArmSliderValue] = useState(0);
+  const [gripperSliderValue, setGripperSliderValue] = useState(0);
   const [tfMini, setTfMini] = useState(0);
   const [prox, setProx] = useState(0);
   const [pressure, setPressure] = useState(0);
@@ -170,42 +201,63 @@ const rows = [
       </div>
       <div className="container1" style={container1Styles}>
         <div className="buttonContainer" style={buttonContainerStyle}>
-              <Button onClick={startButton} className='buttonStart' variant="contained" style={buttonStartStyles}>Start</Button>
+              <Button onClick={startButton} className='buttonStart' variant="contained" style={buttonStartStyles}>Start Collection</Button>
               <Button onClick={releaseButton} className='button' variant="contained" style={buttonReleaseStyles}>Release</Button>
-              <Button onClick={killSwitchButton} className='button' variant="contained" style={buttonKillSwitchStyles}>Kill Switch</Button>
-              <Button onClick={pauseButton} className='button' variant="contained" style={buttonStyles}>Pause</Button>
-              <Button onClick={resetButton} className='button' variant="contained" style={buttonStyles}>Reset</Button>
-              <Button onClick={openClawButton} className='button' variant="contained" style={buttonStyles}>Open Claw %</Button>
-              <Button onClick={armUpButton} className='button' variant="contained" style={buttonStyles}>Arm X Distance Up</Button>
-              <Button onClick={armDownButton} className='button' variant="contained" style={buttonStyles}>Arm X Distance Down</Button>
+              <Button onClick={pauseButton} className='button' variant="contained" style={pauseButtonStyles}>{buttonText}</Button>
+              <Button onClick={resetButton} className='button' variant="contained" style={resetButtonStyles}>Reset</Button>
+              <div className="sliderContainer">
+                <p className="sliderTitle">Open Gripper to X °</p>
+                <div className='constraint'>
+                  <Slider min={0} max={90} value={gripperSliderValue} onChange={gripperSliderChange}/>
+                </div>
+                <div className='buttonNValue'>
+                  <p className="sliderText">{gripperSliderValue + '°'}</p>
+                  <Button variant="contained" onClick={gripperSliderGoButton}sx={{fontSize: '15px', padding: '3px'}}>GO</Button>
+                </div>
+                  
+              </div>
+              <div className="sliderContainer">
+                <p className="sliderTitle">Move Arm to X Distance</p>
+                  <div className="constraint">
+                    <Slider min={0} max={45.72} value={armSliderValue} onChange={armSliderChange}/>
+                  </div>
+                  <div className='buttonNValue'>
+                    <p className="sliderText">{armSliderValue + ' cm'}</p>
+                    <Button variant="contained" onClick={armSliderGoButton} sx={{fontSize: '15px', padding: '3px'}}>GO</Button>
+                  </div>
+                  
+              </div>
 
         </div>
-        <div className="tableContainer" style={tableContainerStyle}>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 350, minHeight: 500}} aria-label="simple table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Sensors</TableCell>
-                  <TableCell align="right">Value</TableCell>
-                  <TableCell align="right">Unit</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow
-                    key={row.name}
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      {row.name}
-                    </TableCell>
-                    <TableCell align="right">{row.value}</TableCell>
-                    <TableCell align="right">{row.unit}</TableCell>
+        <div className="middleContainer">
+        <Button onClick={killSwitchButton} className='button' variant="contained" style={buttonKillSwitchStyles}>Kill Switch</Button>
+          <div className='tableContainer'>
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 350, minHeight: 500}} aria-label="simple table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Sensors</TableCell>
+                    <TableCell align="right">Value</TableCell>
+                    <TableCell align="right">Unit</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow
+                      key={row.name}
+                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                    >
+                      <TableCell component="th" scope="row">
+                        {row.name}
+                      </TableCell>
+                      <TableCell align="right">{row.value}</TableCell>
+                      <TableCell align="right">{row.unit}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
         </div>
         <div className="consoleContainer" style={consoleContainerStyle}>
         <div className="container">
