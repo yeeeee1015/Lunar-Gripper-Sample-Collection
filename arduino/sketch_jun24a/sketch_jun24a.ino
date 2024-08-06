@@ -1,10 +1,15 @@
 #include <SoftwareSerial.h>
 #include <TFMini.h>
-
+#include <Adafruit_VL53L0X.h>
 uint8_t header = 0x59;
 TFMini tfmini;
- 
-SoftwareSerial SerialTFMini(10, 11);
+
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
+
+int distance;
+int strength;
+
+SoftwareSerial SerialTFMini(18,19);
  
 void getTFminiData(int* distance, int* strength)
 {
@@ -14,6 +19,7 @@ void getTFminiData(int* distance, int* strength)
   static double rx[9];
   if (SerialTFMini.available())
   {
+    Serial.println("data avail");
     rx[i] = SerialTFMini.read();
     if (rx[0] != header) {
       i = 0;
@@ -28,6 +34,7 @@ void getTFminiData(int* distance, int* strength)
       if (rx[8] == (checksum % 256)) {
         *distance = rx[2] + rx[3] * 256;
         *strength = rx[4] + rx[5] * 256;
+        Serial.println("ya");
       }
       i = 0;
     }
@@ -35,32 +42,43 @@ void getTFminiData(int* distance, int* strength)
       i++;
     }
   }
+  Serial.println("nothing avail");
 }
- 
- 
+
 void setup()
 {
-  Serial.begin(115200);       //Initialize hardware serial port (serial debug port)
-  while (!Serial);            // wait for serial port to connect. Needed for native USB port only
+  Serial.begin(115200);       //Initialize
+
+  // wait for serial port to connect
+  while (!Serial) {
+    delay(1);
+  }
+
   Serial.println ("Initializing...");
   SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
   tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
+  Serial.println("yo");
+  if (!lox.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while(1);
+  }
+  Serial.println("not failed to boot");
 }
  
 void loop()
-{
-  while (getLidarDist() >= 20) {
-    
-  }
-  Serial.println("Done");
-}
+{ 
+  // distance = 0;
+  // strength = 0;
+  // while (!distance) {
+  //   getTFminiData(&distance, &strength);
+  // }
+  // Serial.print("TFMini: "); Serial.println(distance);
 
-int getLidarDist() {
-  int distance = 0;
-  int strength = 0;
-  while (!distance) {
-    getTFminiData(&distance, &strength);
+  VL53L0X_RangingMeasurementData_t measure;
+
+  lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+  if (measure.RangeStatus == 4) {
+    Serial.println("out of range");
   }
-  Serial.println(distance);
-  return distance;
+  Serial.print("VL53L0X: "); Serial.println(measure.RangeMilliMeter);
 }

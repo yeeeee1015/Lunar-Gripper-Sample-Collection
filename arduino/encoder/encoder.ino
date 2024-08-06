@@ -2,7 +2,7 @@
 #define encoderB 3
 
 const int PPR = 24;
-const int gearRatio = 20;
+const int gearRatio = 1;
 const int readNum = 4;
 volatile double currentPos = 0; // increase is CW, decrease is CCW
 

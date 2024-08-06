@@ -14,13 +14,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Slider from '@mui/material/Slider';
-import Box from '@mui/material/Box';
-import { Typography } from '@mui/material'
 
 const io = require("socket.io-client")
 const socket = io("http://localhost:3001")
 
-const buttonSize = '20px'
+const buttonSize = '40px'
 const startColor = '#00b061'
 const releaseColor = '#f7a305'
 const killSwitchColor = '#d62206'
@@ -34,6 +32,7 @@ let inputData = {
 let boolPause = false
 let armDist = 0
 let gripperPercent = 0
+let currStatus = null
 
 socket.on("connection", () => {
   console.log("this is the client, just connected")
@@ -59,7 +58,7 @@ const buttonReleaseStyles = {
   backgroundColor: releaseColor
 }
 const buttonKillSwitchStyles = {
-  fontSize: '40px',
+  fontSize: '60px',
   backgroundColor: killSwitchColor,
   width: '100%'
 }
@@ -100,12 +99,19 @@ const imageStyle = {
 function App() {
 
   const [status, setStatus] = useState([])
-    function handleClick(initStatus, sensNum, sensData) {
+
+    function addStatus(initStatus) {
+
       if (status.length >= 25) {
         setStatus(t => [initStatus])
       } else {
         setStatus(t => [...t , initStatus])
       }
+
+    }
+    function handleClick(initStatus, sensNum, sensData) {
+     
+      addStatus(initStatus)
       inputData.sensorNumber = sensNum
       inputData.sensorData = sensData
       socket.emit("uiData", inputData)
@@ -161,22 +167,62 @@ function App() {
     function clearConsole() {
         setStatus(t => [])
     }
+
+    //tfmini: TFMini,
+    // prox: Prox,
+    // vl53l0x: VL53L0X,
+    // lim1: limit1,
+    // lim2: limit2,
+    // lim3: limit3,
+    // press1: Pressure1,
+    // press2: Pressure2,
+    // press3: Pressure3,
+    // dcEnc: dcEncoder,
+    // servoEnc: servoEncoder,
+    // stat: currStatus 
   const [buttonText, setButtonText] = useState("Pause")
   const [armSliderValue, setArmSliderValue] = useState(0);
   const [gripperSliderValue, setGripperSliderValue] = useState(0);
   const [tfMini, setTfMini] = useState(0);
   const [prox, setProx] = useState(0);
-  const [pressure, setPressure] = useState(0);
   const [vl53l0x, setVl53l0x] = useState(0);
   const [limitSwitch1, setLimitSwitch1] = useState(0);
+  const [limitSwitch2, setLimitSwitch2] = useState(0);
+  const [limitSwitch3, setLimitSwitch3] = useState(0);
+  const [pressure1, setPressure1] = useState(0);
+  const [pressure2, setPressure2] = useState(0);
+  const [pressure3, setPressure3] = useState(0);
+  const [servoEncoder, setServoEncoder] = useState(0);
+  const [dcEncoder, setDcEncoder] = useState(0);
+
+  
 
   useEffect(() => {
     socket.on('sendingData', (data)=> {
       setTfMini(data.tfmini)
       setProx(data.prox)
-      setPressure(data.pressure)
       setVl53l0x(data.vl53l0x)
-      setLimitSwitch1(data.limitSwitch)
+      setLimitSwitch1(data.lim1)
+      setLimitSwitch2(data.lim2)
+      setLimitSwitch3(data.lim3)
+      setPressure1(data.press1)
+      setPressure2(data.press2)
+      setPressure3(data.press3)
+      setDcEncoder(data.dcEnc)
+      setServoEncoder(data.servoEnc)
+      setStatus((prevStatus) => {
+        if (currStatus !== data.stat) {
+          currStatus = data.stat
+          if (prevStatus.length >= 25) {
+            return [data.stat];
+          } else {
+            return [...prevStatus, data.stat];
+          }
+        }
+        return prevStatus;
+      });
+
+      
     })
     return () => socket.off('sendingData');   // Cleanup interval on component unmount
   }, []);
@@ -188,9 +234,16 @@ function App() {
 const rows = [
   createData("TFMini", tfMini, "cm"),
   createData("Proximity Sensor", prox, "binary"),
-  createData("Pressure Sensor", pressure, "unit?"),
   createData("VL53L0X", vl53l0x, "mm"),
+  createData("DC Motor Encoder", servoEncoder, "unit?"),
+  createData("Servo Motor Encoder", dcEncoder, "unit?"),
   createData("Limit Switch 1", limitSwitch1, "binary"),
+  createData("Limit Switch 2", limitSwitch2, "binary"),
+  createData("Limit Switch 3", limitSwitch3, "binary"),
+  createData("Pressure Sensor 1", pressure1, "unit?"),
+  createData("Pressure Sensor 2", pressure2, "unit?"),
+  createData("Pressure Sensor 3", pressure3, "unit?"),
+
 ];
 
   return (
