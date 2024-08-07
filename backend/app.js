@@ -17,7 +17,7 @@ let currStatus = ""
 let queue = []
 
 const port = new SerialPort({
-  path: "COM4",
+  path: "COM6",
   baudRate: 115200,
   autoOpen: false
 })
