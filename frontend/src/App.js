@@ -24,6 +24,8 @@ const releaseColor = '#f7a305'
 const killSwitchColor = '#d62206'
 const pauseColor = '#A9A9A9'
 const resetColor = '#7F00FF'
+const closeClawColor = '#A9A9A9'
+const resetArmColor = '#0D02D4'
 let inputData = {
   sensorNumber : -1,
   sensorData: null
@@ -42,6 +44,16 @@ socket.on("connection", () => {
 const pauseButtonStyles = {
   fontSize: buttonSize,
   backgroundColor: pauseColor
+}
+
+const closeClawButtonStyles = {
+  fontSize: buttonSize,
+  backgroundColor: closeClawColor
+}
+
+const resetArmButtonStyles = {
+  fontSize: buttonSize,
+  backgroundColor: resetArmColor
 }
 
 const resetButtonStyles = {
@@ -131,16 +143,16 @@ function App() {
     function killSwitchButton() {
       handleClick("Killing power", 3, null)
     }
-    function pauseButton() {
-      if (boolPause) {
-        setButtonText("Pause")
-        handleClick("Unpaused",4,null)
-      } else {
-        setButtonText("Unpause")
-        handleClick("Paused",4,null)
-      }
-      boolPause = !boolPause
-    }
+    // function pauseButton() {
+    //   if (boolPause) {
+    //     setButtonText("Pause")
+    //     handleClick("Unpaused",4,null)
+    //   } else {
+    //     setButtonText("Unpause")
+    //     handleClick("Paused",4,null)
+    //   }
+    //   boolPause = !boolPause
+    // }
     function resetButton() {
       handleClick("Resetting",5,null)
     }
@@ -164,11 +176,19 @@ function App() {
       handleClick("Gripper is open to " + gripperPercent +"°",7,gripperPercent)
     }
 
+    function resetArmButton() {
+      handleClick("Resetting arm",6,null);
+    }
+
+    function closeClawButton() {
+      handleClick("Closing claw",7,null);
+    }
+
     function clearConsole() {
         setStatus(t => [])
     }
 
-    //tfmini: TFMini,
+    // tfmini: TFMini,
     // prox: Prox,
     // vl53l0x: VL53L0X,
     // lim1: limit1,
@@ -235,14 +255,14 @@ const rows = [
   createData("TFMini", tfMini, "cm"),
   createData("Proximity Sensor", prox, "binary"),
   createData("VL53L0X", vl53l0x, "mm"),
-  createData("DC Motor Encoder", servoEncoder, "unit?"),
-  createData("Servo Motor Encoder", dcEncoder, "unit?"),
+  // createData("DC Motor Encoder", servoEncoder, "unit?"),
+  // createData("Servo Motor Encoder", dcEncoder, "unit?"),
   createData("Limit Switch 1", limitSwitch1, "binary"),
   createData("Limit Switch 2", limitSwitch2, "binary"),
   createData("Limit Switch 3", limitSwitch3, "binary"),
-  createData("Pressure Sensor 1", pressure1, "unit?"),
-  createData("Pressure Sensor 2", pressure2, "unit?"),
-  createData("Pressure Sensor 3", pressure3, "unit?"),
+  // createData("Pressure Sensor 1", pressure1, "unit?"),
+  // createData("Pressure Sensor 2", pressure2, "unit?"),
+  // createData("Pressure Sensor 3", pressure3, "unit?"),
 
 ];
 
@@ -256,9 +276,11 @@ const rows = [
         <div className="buttonContainer" style={buttonContainerStyle}>
               <Button onClick={startButton} className='buttonStart' variant="contained" style={buttonStartStyles}>Start Collection</Button>
               <Button onClick={releaseButton} className='button' variant="contained" style={buttonReleaseStyles}>Release</Button>
-              <Button onClick={pauseButton} className='button' variant="contained" style={pauseButtonStyles}>{buttonText}</Button>
+              {/* <Button onClick={pauseButton} className='button' variant="contained" style={pauseButtonStyles}>{buttonText}</Button> */}
               <Button onClick={resetButton} className='button' variant="contained" style={resetButtonStyles}>Reset</Button>
-              <div className="sliderContainer">
+              <Button onClick={resetArmButton} className='button' variant="contained" style={resetArmButtonStyles}>Lower Arm</Button>
+              <Button onClick={closeClawButton} className='button' variant="contained" style={closeClawButtonStyles}>Close Claw</Button>
+              {/* <div className="sliderContainer">
                 <p className="sliderTitle">Open Gripper to X °</p>
                 <div className='constraint'>
                   <Slider min={-90} max={90} value={gripperSliderValue} onChange={gripperSliderChange}/>
@@ -279,7 +301,7 @@ const rows = [
                     <Button variant="contained" onClick={armSliderGoButton} sx={{fontSize: '15px', padding: '3px'}}>GO</Button>
                   </div>
                   
-              </div>
+              </div> */}
 
         </div>
         <div className="middleContainer">

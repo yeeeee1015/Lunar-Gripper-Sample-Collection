@@ -71,12 +71,13 @@ function deserializeArduino(data) {
     limit1 = array[3]
     limit2 = array[4]
     limit3 = array[5]
-    Pressure1 = array[6]
-    Pressure2 = array[7]
-    Pressure3 = array[8]
-    dcEncoder = array[9]
-    servoEncoder = array[10]
-    currStatus = array[11]
+    currStatus = array[6]
+    // Pressure1 = array[6]
+    // Pressure2 = array[7]
+    // Pressure3 = array[8]
+    // dcEncoder = array[9]
+    // servoEncoder = array[10]
+    //currStatus = array[11]
     // [TFMini, Prox, VL53L0X, limit1, limit2, limit3, Pressure1, Pressure2, Pressure3, dcEncoder, servoEncoder, currStatus] = array
     
     
