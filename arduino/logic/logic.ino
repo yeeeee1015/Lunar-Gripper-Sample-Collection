@@ -5,7 +5,8 @@
 #include <ezButton.h>
 #include "IntervalTimer.h"
 #include <ArduinoQueue.h>
-#include <PWMServo.h>
+#include <Servo.h>
+#include "Statistic.h"
 // pin definitions
 #define prox1 15
 #define press1 22
@@ -32,15 +33,15 @@ TFMini tfmini;
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 VL53L0X_RangingMeasurementData_t measure;
 IntervalTimer clk;
-PWMServo claw;
+Servo claw;
+Statistic stats;
  
 uint8_t header = 0x59;                // used to tell if tf mini is reading garbage or not
 volatile long int currentPosArm = 0;  // increase is CW, decrease is CCW
 volatile long int currentPosClaw = 0;
-volatile int topLimitState = 0;
-volatile int bottomLimitState = 0;
-volatile int gripperLimitState = 0;
-double clawDist = 0;  // obj detection value when no obj
+ 
+int clawDist = 0;  // obj detection value when no obj
+double clawDev;
 String status = "initializing";
 String prepause;  // status before pause var
 int motorApre;
@@ -49,15 +50,16 @@ int motorClawpre;
 int motorApost;
 int motorBpost;
 int motorClawpost;
+int lidarVal = "";
 ArduinoQueue<int> q(100);  // queue for ui instrs
 bool isPaused = false;
 bool isKilled = false;
+bool isParam = false;
 //encoder consts
 const int armPPR = 480;
 const int clawPPR = 24;
 const int readNum = 4;
-const int gearRatio = 20;
-volatile double clawAngle = ((360*currentPosClaw)/(clawPPR*readNum*gearRatio));
+const double clawRatio = 0.375;
  
 void changeArmA() {
   if (digitalRead(encoderArmA) != digitalRead(encoderArmB)) {
@@ -91,25 +93,6 @@ void changeClawB() {
   }
 }
  
-void changeLimit1() {
-  topLimitState = !topLimitState;
-}
- 
-void changeLimit2() {
-  bottomLimitState = !bottomLimitState;
-}
- 
-void changeLimit3() {
-  gripperLimitState = !gripperLimitState;
-}
- 
-void updateVL53() {
-  lox.rangingTest(&measure, false);  // pass in 'true' to get debug data printout!
-  if (measure.RangeStatus == 4) {
-    Serial.println("out of range");
-  }
-}
- 
 void killswitch() {
   digitalWrite(killSwitchPin, LOW);
   clk.end();
@@ -124,7 +107,7 @@ void killswitch() {
         Serial.println("Back Alive");
         isKilled = false;
         status = "idle";
-        clk.begin(sendOutput, 50000);
+        clk.begin(sendOutput, 75000);
         break;
       }
     }
@@ -141,19 +124,21 @@ void actuateArmMotor(int freqA, int freqB) {
  
 void pause() {
   clk.end();
+  status = "paused";
   while (isPaused) {
-    //updateVL53();
+    Serial.println(serialize());
     while (Serial.available() > 0) {
       int rec = Serial.parseInt();
       if (rec == 4) {
         Serial.println("Unpause 4");
         isPaused = false;
-        status = prepause;
-        clk.begin(sendOutput, 50000);
+        clk.begin(sendOutput, 75000);
         actuateArmMotor(motorApost, motorBpost);
+        status = prepause;
         return;
       } else if (rec != 0) {
-        Serial.print("enqueuing "); Serial.println(rec);
+        // Serial.print("enqueuing ");
+        // Serial.println(rec);
         q.enqueue(rec);
       }
     }
@@ -161,22 +146,22 @@ void pause() {
 }
  
 void sendOutput() {
-  // updateVL53();
   Serial.println(serialize());
+  // Serial.println(String(q.getHead()));
   // Serial.print("Encoder: "); Serial.println(currentPosArm/encoderRatio);
   while (Serial.available() > 0) {
     int rec = Serial.parseInt();
     //Serial.print("Parsed "); Serial.println(rec);
-    if (rec == 3) {
+    if (isParam == true) {
+      return;
+    } else if (rec == 3) {
       Serial.println("Dead");
       status = "killed";
       isKilled = true;
       killswitch();
-    }
-    if (rec == 4) {
+    } else if (rec == 4) {
       Serial.println("PAUSE 4");
       prepause = status;
-      status = "paused";
       isPaused = true;
       motorApost = motorApre;
       motorBpost = motorBpre;
@@ -204,53 +189,47 @@ void setup() {
   pinMode(motorClaw, OUTPUT);
   pinMode(sdA, OUTPUT);
   pinMode(sdB, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(encoderArmA), changeArmA, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoderArmB), changeArmB, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoderClawA), changeClawA, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoderClawB), changeClawB, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(limit1), changeLimit1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(limit2), changeLimit2, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(limit3), changeLimit3, CHANGE);
-  claw.attach(motorClaw);
- 
-  Serial.println("Initializing...");
-  // SerialTFMini.begin(115200);    //Initialize the data rate for the SoftwareSerial port
-  // tfmini.begin(&SerialTFMini);            //Initialize the TF Mini sensor
-  // if (!lox.begin()) {
-  //   Serial.println(F("Failed to boot VL53L0X"));
-  //   while(1);
-  // }
-  clk.begin(sendOutput, 50000);
+  digitalWrite(LED_BUILTIN, HIGH);
+  Serial.println("initializing");
+  SerialTFMini.begin(115200);   //Initialize the data rate for the SoftwareSerial port
+  tfmini.begin(&SerialTFMini);  //Initialize the TF Mini sensor
   digitalWrite(killSwitchPin, HIGH);
+  if (!lox.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while (1);
+  }
+  clk.begin(sendOutput, 75000);
   digitalWrite(sdA, HIGH);
   digitalWrite(sdB, HIGH);
+  Serial.println("Initialized");
 }
  
 void loop() {
-  status = "idle";
   int instr = getInstruction();
   delay(50);
   if (instr != -1) {
-    Serial.print("Got instruction: ");
-    Serial.println(instr);
     doInstruction(instr);
     delay(50);
   }
 }
  
 String serialize() {
-  return String(getTFMiniDist()) + "@" + String(digitalRead(prox1)) + "@" + measure.RangeMilliMeter + "@" +
-  String(analogRead(press1)) + "@" + String(analogRead(press2)) + "@" + String(analogRead(press3)) + "@" +
-  String(topLimitState) + "@" + String(bottomLimitState) + "@" + String(gripperLimitState) + "@" +
-  String(currentPosArm/) + "@" + String(clawAngle) + "@" + status;
+  lidarVal = getVL53L0XDist();
+  return String(getTFMiniDist()) + "@" + String(digitalRead(prox1)) + "@" + String(lidarVal) + "@" + String(digitalRead(limit1)) + "@" + String(digitalRead(limit2)) + "@" + String(digitalRead(limit3)) + "@" + String(clawDist) + "@b@c@" + String(currentPosArm / encoderRatio) + "@" + String(currentPosClaw*clawRatio) + "@" + status;
+  // return "a@b@c@d@e@f@g@" + status;
 }
  
 int getInstruction() {
   if (q.isEmpty()) {
+    status = "idle";
     return -1;
   }
-  Serial.print("Instruction: ");
-  Serial.println(q.getHead());
+  status = String(q.getHead());
   return q.dequeue();
 }
  
@@ -268,7 +247,8 @@ void doInstruction(int instr) {
       reset();
       break;
     case 6:  // move Arm
-      setArm(q.dequeue(), false);
+      setArm(q.dequeue(), 0.5);
+      // setArm();
       break;
     case 7:  // move claw
       setClaw(q.dequeue());
@@ -283,87 +263,172 @@ void start() {
   status = "starting";
   int groundDist;
   reset();
-  groundDist = getTFMiniDist();
-  status = "ground distance: " + String(groundDist);
-  setArm(groundDist * 0.90, .90);
-  Serial.println("Moved down");
+  // groundDist = getTFMiniDist();
+  // status = "ground distance: " + String(groundDist);
+  // setArm(groundDist * 0.90, .90);
+  // Serial.println("Moved down");
+  // actuateArmMotor(0, 0);
+  // delay(1000);
+  // actuateArmMotor(0, 127);
+  // while (digitalRead(prox1)) {  // 15 cm
+  // }
+  // actuateArmMotor(0, 0);
+  // Serial.println("Prox On");
+  // delay(5000);
+  // if (!detectObj()) {
+  //   Serial.print("Object not detected");
+  //   return;
+  // }
+  // closeClaw();
+  // // setArm(15, 0.5);
+  // Serial.println("Moved up");
+ 
+  // if (!detectObj()) {
+  //   Serial.print("Object not detected");
+  //   return;
+  // }
+  // Serial.println("Done");
+  delay(500);
+  actuateArmMotor(0, 127);
   while (digitalRead(prox1)) {  // 15 cm
-    actuateArmMotor(0, 127);
   }
   actuateArmMotor(0, 0);
-  Serial.println("Prox On");
+  closeClaw();
   if (!detectObj()) {
-    Serial.print("Object not detected");
+    actuateArmMotor(245, 0);  // move claw up
+    status = "Object not detected";
+    while (!digitalRead(limit2)) {
+    }
+    actuateArmMotor(0, 0);
     return;
   }
-  setClaw(90);
-  setArm(15);
-  Serial.println("Moved up");
- 
-  if (!detectObj()) {
-    Serial.print("Object not detected");
-    return;
+  else {
+    actuateArmMotor(245, 0);  // move claw up
+    delay(5000);
+    if (!detectObj()) {
+      status = "Object slipped out";
+      while (!digitalRead(limit2)) {
+      }
+      actuateArmMotor(0, 0);
+      return;
+    }
+    else {
+      status = "object still in";
+      while (!digitalRead(limit2)) {
+      }
+      actuateArmMotor(0, 0);
+      return;
+    }
   }
-  Serial.println("Done");
 }
  
 void release() {
   status = "releasing";
-  setClaw(0);
+  resetClaw();
+  return;
 }
  
 void reset() {
   status = "resetting";
-  while (!bottomLimitState) {
-    actuateArmMotor(245, 0);  // move claw up
+  actuateArmMotor(240, 0);  // move claw up
+  while (!digitalRead(limit2)) {
   }
   actuateArmMotor(0, 0);
   currentPosArm = 0;
-  setClaw(90);
-  clawDist = getAvgVl53L0X(15);
+  closeClaw();
+  clawDist = getVL53L0XStats(10);
+  status = String(clawDev);
+  delay(1000);
   release();
   return;
 }
  
-void setClaw(int angle) {
-  int direction = 1;
-  status = "moving claw to " + String(angle);
-  if (clawAngle < angle) {
-    direction = 180;
-  } else if (clawAngle > angle) {
-    direction = 0;
+void resetClaw() {
+  claw.attach(motorClaw);
+  currentPosClaw = 0;
+  int time = millis();
+  while (!digitalRead(limit3) && millis() <= time + 2500) {
+    claw.write(0);
   }
-  while ((direction == 180 && (clawAngle< angle)) || (direction == 0 && clawAngle > angle)) {
-    claw.write(direction);
+  while (!digitalRead(limit3)) {
+    claw.write(65);
   }
   claw.write(90);
+  claw.detach();
+  return;
+}
+ 
+void closeClaw() {
+  claw.attach(motorClaw);
+  claw.write(180);
+  delay(750);
+  claw.write(90);
+  claw.write(120);
+  delay(6000);
+  claw.write(90);
+  status = "clawclosed";
+  claw.detach();
+  return;
+}
+ 
+void setClaw(int angle) {
+  status = "closingclaw";
+  // isParam = false;
+  // int direction = 1;
+  // status = "moving claw to " + String(angle);
+  // if (currentPosClaw*clawRatio > angle) {
+  //   direction = 60;  // opens gripper
+  // } else if (currentPosClaw*clawRatio < angle) {
+  //   direction = 120;  // closes gripper
+  // }
+  // while ((direction == 120 && (currentPosClaw*clawRatio < angle)) || (direction == 60 && currentPosClaw*clawRatio > angle)) {
+  //   claw.write(direction);
+  // }
+  // claw.write(90);
+  // return;
+  closeClaw();
   return;
 }
  
 void setArm(double distance, double maxSpeedPercent) {
-  int setSpeed = int(245 * maxSpeedPercent);
-  // Serial.print("distance: "); Serial.println(distance);
-  // Serial.print("encoder: "); Serial.println(currentPosArm / encoderRatio);
-  if ((-1 * (currentPosArm / encoderRatio)) < (distance * 10 - 1)) {
-    actuateArmMotor(0, setSpeed);
-    while ((-1 * (currentPosArm / encoderRatio)) < (distance * 10 - 1)) {
-    }
-    actuateArmMotor(0, 0);
-    return;
-  } else {
-    actuateArmMotor(setSpeed, 0);
-    while ((-1 * (currentPosArm / encoderRatio)) > (distance * 10)) {
-    }
-    actuateArmMotor(0, 0);
-    return;
+  // isParam = false;
+  // int setSpeed = int(245 * maxSpeedPercent);
+  // // Serial.print("distance: "); Serial.println(distance);
+  // // Serial.print("encoder: "); Serial.println(currentPosArm / encoderRatio);
+  // if ((-1 * (currentPosArm / encoderRatio)) < (distance * 10 - 1)) {
+  //   actuateArmMotor(0, setSpeed);
+  //   status = "moving arm";
+  //   while ((-1 * (currentPosArm / encoderRatio)) < (distance * 10 - 1)) {
+  //   }
+  //   status = "arm stopped";
+  //   actuateArmMotor(0, 0);
+  //   return;
+  // } else {
+  //   actuateArmMotor(setSpeed, 0);
+  //   while ((-1 * (currentPosArm / encoderRatio)) > (distance * 10)) {
+  //   }
+  //   actuateArmMotor(0, 0);
+  //   return;
+  // }
+  status = "moving claw up";
+  actuateArmMotor(245, 0);  // move claw up
+  while (!digitalRead(limit2)) {
   }
+  actuateArmMotor(0, 0);
+  delay(500);
+  status = "moving claw down";
+  actuateArmMotor(0, 245);
+  while (digitalRead(prox1)) {  // 15 cm
+  }
+  actuateArmMotor(0, 0);
+  return;
 }
  
-void rampArm(int distance) {
-  setArm(distance * 0.1, 0.5);
-  setArm(distance * 0.8, 1);
-  setArm(distance * 0.1, 0.5);
-}
+// void rampArm(int distance) {
+//   setArm(distance * 0.1, 0.5);
+//   setArm(distance * 0.8, 1);
+//   setArm(distance * 0.1, 0.5);
+// }
  
 void getTFminiData(int* distance, int* strength) {
   static char i = 0;
@@ -408,33 +473,29 @@ int getVL53L0XDist() {
   VL53L0X_RangingMeasurementData_t measure;
  
   lox.rangingTest(&measure, false);  // pass in 'true' to get debug data printout
-  if (measure.RangeStatus != 4) {    // phase failures have incorrect data
-    return measure.RangeMilliMeter;
-  } else {
-    return -1;
-  }
+  return measure.RangeMilliMeter;
 }
  
-int getAvgVl53L0X(int numAvg) {
+int getVL53L0XStats(int numAvg) {
   int ct = 0;
-  int dist;
-  int sum = 0;
- 
+  status = "getting avg";
+  stats.clear();
   while (ct <= numAvg) {
-    dist = getVL53L0XDist();
-    if (dist != -1) {
-      sum = sum + dist;
-      ct = ct + 1;
-    }
+    stats.add(lidarVal);
+    ct = ct + 1;
+    delay(50);
   }
-  return (sum / numAvg);
+  status = String(stats.average());
+  clawDev = stats.pop_stdev();
+  return stats.average();
 }
  
 bool detectObj() {
   status = "detecting object";
-  if (abs(clawDist - getAvgVl53L0X(15)) >= 5) {  // arbitrary 5
+  //double clawThreshold = ((clawDist + clawDev) * 1.1) - clawDist;
+  double clawThreshold = clawDev;
+  if (abs(getVL53L0XStats(10)-clawDist) > clawThreshold) {
     return true;
   }
-  //return false;
-  return true;
+  return false;
 }
