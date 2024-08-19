@@ -251,6 +251,7 @@ void doInstruction(int instr) {
       // setArm();
       break;
     case 7:  // move claw
+      isParam = true;
       setClaw(q.dequeue());
       break;
     default:

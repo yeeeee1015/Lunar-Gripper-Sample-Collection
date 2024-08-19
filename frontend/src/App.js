@@ -261,7 +261,7 @@ const rows = [
               <div className="sliderContainer">
                 <p className="sliderTitle">Open Gripper to X °</p>
                 <div className='constraint'>
-                  <Slider min={0} max={90} value={gripperSliderValue} onChange={gripperSliderChange}/>
+                  <Slider min={-90} max={90} value={gripperSliderValue} onChange={gripperSliderChange}/>
                 </div>
                 <div className='buttonNValue'>
                   <p className="sliderText">{gripperSliderValue + '°'}</p>
@@ -272,7 +272,7 @@ const rows = [
               <div className="sliderContainer">
                 <p className="sliderTitle">Move Arm to X Distance</p>
                   <div className="constraint">
-                    <Slider min={0} max={45.72} value={armSliderValue} onChange={armSliderChange}/>
+                    <Slider min={-45} max={45.72} value={armSliderValue} onChange={armSliderChange}/>
                   </div>
                   <div className='buttonNValue'>
                     <p className="sliderText">{armSliderValue + ' cm'}</p>
