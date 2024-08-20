@@ -13,7 +13,7 @@ const io = new Server(server, {
   }
 });
 const portNumber = 3001
-let currStatus = ""
+let currStatus = null
 let queue = []
 
 const port = new SerialPort({
@@ -32,14 +32,14 @@ io.on('connection', (socket) => {
   queue = [];  
 
   socket.on('sendingStatus', (_currStatus) => {
-    console.log(currStatus)
+    //console.log(currStatus)
     currStatus = _currStatus
   })
 
   socket.on('uiData', (info) => {
 
     queue.push(info)
-    console.log(queue)
+    //console.log(queue)
   
   })
 
@@ -78,7 +78,7 @@ function deserializeArduino(data) {
     // dcEncoder = array[9]
     // servoEncoder = array[10]
     //currStatus = array[11]
-    // [TFMini, Prox, VL53L0X, limit1, limit2, limit3, Pressure1, Pressure2, Pressure3, dcEncoder, servoEncoder, currStatus] = array
+    [TFMini, Prox, VL53L0X, limit1, limit2, limit3, Pressure1, Pressure2, Pressure3, dcEncoder, servoEncoder, currStatus] = array
     
     
     // console.log(TFMini, Prox,Pressure,VL53L0X,limit)
@@ -116,7 +116,7 @@ function jsonify() {
     press3: Pressure3,
     dcEnc: dcEncoder,
     servoEnc: servoEncoder,
-    stat: currStatus  
+    status: currStatus  
   }
 }
 

@@ -54,8 +54,19 @@ void killswitch() {
   }
 }
 
-void actuateArmMotor(int freqA, int freqB) {
-  status = "pwm A is " + String(freqA) + " pwm B is " + String(freqB);
+void actuateArmMotor(double freqA, double freqB) {
+  if (freqA > freqB) {
+    double power = (freqA/255.0) * 100.0;
+    status = "Arm moving up at " + String(power) + " percent power";
+  }
+  else if (freqB > freqA) {
+    double power = (freqB/255.0) * 100.0;
+    status = "Arm moving down at " + String(power) + " percent power";
+  }
+  else {
+    status = "Arm stopped";
+  }
+  // status = "pwm A is " + String(freqA) + " pwm B is " + String(freqB);
   analogWrite(motorArmA, freqA);
   analogWrite(motorArmB, freqB);
 }
@@ -65,16 +76,12 @@ void sendOutput() {
   Serial.println(serialize());
   while (Serial.available() > 0) {
     int rec = Serial.parseInt();
-    //Serial.print("Parsed "); Serial.println(rec);
     if (rec == 3) {
-      Serial.println("Dead");
       status = "killed";
       isKilled = true;
       killswitch();
     } 
     else if (rec != 0) {
-      Serial.print("enqueuing ");
-      Serial.println(rec);
       q.enqueue(rec);
     }
   }
@@ -123,13 +130,10 @@ int getInstruction() {
     status = "idle";
     return -1;
   }
-  status = String(q.getHead());
   return q.dequeue();
 }
 
 void doInstruction(int instr) {
-  Serial.print("Case ");
-  Serial.println(instr);
   switch (instr) {
     case 1:  // start
       start();
@@ -149,11 +153,10 @@ void doInstruction(int instr) {
     default:
       Serial.println("invalid input");
   }
-  Serial.println("executed instruction");
 }
 
 void start() {
-  status = "starting";
+  status = "Starting start process";
   int groundDist;
   reset();
   actuateArmMotor(0, 127);
@@ -181,7 +184,7 @@ void start() {
       return;
     } 
     else {
-      status = "object still in";
+      status = "Object still in gripper";
       while (!digitalRead(limit2)) {
       }
       actuateArmMotor(0, 0);
@@ -191,13 +194,13 @@ void start() {
 }
 
 void release() {
-  status = "releasing";
+  status = "Starting release process";
   releaseClaw();
   return;
 }
 
 void reset() {
-  status = "resetting";
+  status = "Starting reset process";
   actuateArmMotor(240, 0);  // move claw up
   while (!digitalRead(limit2)) {
   }
@@ -226,26 +229,25 @@ void releaseClaw() {
 }
 
 void closeClaw() {
-  status = "closingclaw";
+  status = "Closing Claw";
   claw.attach(motorClaw);
   claw.write(180);
   delay(750);
   claw.write(120);
   delay(6000);
   claw.write(90);
-  status = "clawclosed";
   claw.detach();
+  status = "Claw Closed";
   return;
 }
 
 void setArm() {
-  status = "moving claw up";
+  status = "Starting lower arm Process";
   actuateArmMotor(245, 0);  // move claw up
   while (!digitalRead(limit2)) {
   }
   actuateArmMotor(0, 0);
   delay(500);
-  status = "moving claw down";
   actuateArmMotor(0, 127);
   while (digitalRead(prox1)) {  // 15 cm
   }
@@ -300,19 +302,18 @@ int getVL53L0XDist() {
 
 int getVL53L0XStats(int numAvg) {
   int ct = 0;
-  status = "getting avg";
+  status = "Getting claw average";
   stats.clear();
   while (ct <= numAvg) {
     stats.add(lidarVal);
     ct = ct + 1;
     delay(50);
   }
-  status = String(stats.average());
   return stats.average();
 }
 
 bool detectObj() {
-  status = "detecting object";
+  status = "Detecting object";
   double clawThreshold = 15;
   if (abs(getVL53L0XStats(10)-clawDist) > clawThreshold) { 
     return true;

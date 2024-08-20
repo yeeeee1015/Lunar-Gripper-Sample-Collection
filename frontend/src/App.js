@@ -230,6 +230,7 @@ function App() {
       setPressure3(data.press3)
       setDcEncoder(data.dcEnc)
       setServoEncoder(data.servoEnc)
+      setStatus(data.status[6])
       setStatus((prevStatus) => {
         if (currStatus !== data.stat) {
           currStatus = data.stat
@@ -239,7 +240,7 @@ function App() {
             return [...prevStatus, data.stat];
           }
         }
-        return prevStatus;
+        return [prevStatus];
       });
 
       
